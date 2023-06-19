@@ -1,0 +1,102 @@
+name: Chocolatine
+
+on:
+  push:
+    branches-ignore:
+      - 'ga-ignore-*'
+    paths-ignore:
+      - 'tests/'
+
+  pull_request:
+      branches-ignore:
+          - 'ga-ignore-*'
+
+env:
+  MIRROR_URL: 'git@github.com:EpitechPromo2027/B-SYN-200-NAN-2-1-projtester-aimeric.rouyer.git'
+  EXECUTABLES: 'projTester'
+
+jobs:
+  check_coding_style: 
+    name: Check coding style
+    runs-on: ubuntu-latest
+    container:
+        image: ghcr.io/epitech/coding-style-checker:latest
+    steps:
+        - name: Check coding style
+          id: check_coding_style
+          uses: actions/checkout@v3
+        - name : Run check coding style
+          run: check.sh $(pwd) $(pwd)
+        - name : display coding style error
+          run: |
+            input=$(pwd)/coding-style-reports.log
+            while read line
+            do
+                ERROR_TYPE=$(echo $line | cut -d ':' -f 3 | cut -d ' ' -f 2)
+                FILE_NAME=$(echo $line | cut -d ':' -f 1 | cut -c 3-)
+                FILE_PATH=$(echo $line | cut -d ':' -f 1)
+                ERROR_LINE=$(echo $line | cut -d ':' -f 2)
+                ERROR_CODE=$(echo $line | cut -d ':' -f 4)
+                echo "::error file=$FILE_PATH,line=$ERROR_LINE,title=$ERROR_TYPE coding style error: ::$ERROR_CODE"
+            done < "$input"
+  check_program_compilation:
+    name : Check program compilation
+    needs : check_coding_style
+    runs-on: ubuntu-latest
+    container:
+        image: epitechcontent/epitest-docker:latest
+    steps:
+        - name: Check program compilation
+          id: check_program_compilation
+          uses: actions/checkout@v3
+          timeout-minutes: 2
+        - name : Run make on Makefile
+          run: make
+        - name : Run make clean on Makefile
+          run: make clean
+        - name : check if executable exists
+          run : |
+            IFS=',' read -ra files <<< "$EXECUTABLES"
+            for file in "${files[@]}"; do
+            if [ ! -x "$file" ]; then
+                echo "::error file=$file,title=executable isn't find or doesn't exist error::executable not found"
+                exit 1
+            fi
+            done
+  run_tests:
+    name : run tests
+    needs : [check_coding_style, check_program_compilation]
+    runs-on: ubuntu-latest
+    container:
+        image: epitechcontent/epitest-docker:latest
+    steps:
+        - name: run tests
+          id: run_tests
+          uses: actions/checkout@v3
+          timeout-minutes: 2
+        - name : Run make on Makefile
+          run: make
+        - name : Run unit tests
+          run: make re_tests
+        - name : Run make clean on Makefile
+          run: make clean
+        - name : Run make test on Makefile
+          run: make ftests
+  push_to_mirror:
+    name: push to mirror
+    needs: [check_coding_style, check_program_compilation, run_tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: get mirror
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: push to mirror
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: ${{ env.MIRROR_URL }}
+          ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+          ignore_folders: 'tests'
+          ignore_files: '.gitignore'
+                    
+

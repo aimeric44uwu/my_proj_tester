@@ -1,0 +1,8 @@
+[[test]]
+name = "execute the bin with no args but only check the return code"
+command = "./FASTAtools"
+expected.stdout = '--skip'
+expected.stderr = ""
+expected.exit_code = 0
+[[test]]
+
