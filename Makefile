@@ -7,7 +7,7 @@
 
 MAINFILE	=	src/main.c			\
 
-BINNAME		=	FASTAtools
+BINNAME		=	projTester
 
 LIBNAME		=	lib/my/libmy.a
 
