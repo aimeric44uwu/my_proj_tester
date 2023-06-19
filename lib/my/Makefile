@@ -5,7 +5,9 @@
 ## Makefile
 ##
 
-SRC		=
+SRC		=	print_help.c \
+			error_occured.c \
+			path_one.c \
 
 OBJ		=     	$(SRC:.c=.o)
 

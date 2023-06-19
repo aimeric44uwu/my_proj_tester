@@ -6,6 +6,9 @@
 ##
 
 MAINFILE	=	src/main.c			\
+				src/exec_flags.c	\
+				src/init.c 			\
+				src/parse_arg.c	\
 
 BINNAME		=	projTester
 
